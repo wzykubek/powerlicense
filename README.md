@@ -19,3 +19,18 @@ To list available templates run:
 ```bash
 licensmith --list
 ```
+
+## Installation
+There are different ways to get Licensmith:
+1. Use prebuilt binaries:
+    - [Releases](/wzykubek/licensmith/releases): Stable versions
+    - [Actions](/wzykubek/licensmith/actions): Development versions
+
+2. Install from source: [see *Compilation*](#compilation)
+
+## Compilation
+```bash
+git clone https://github.com/wzykubek/licensmith
+cd licensmith
+go build -v ./...
+```

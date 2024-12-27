@@ -23,10 +23,10 @@ licensmith --list
 ## Installation
 There are different ways to get Licensmith:
 1. Use prebuilt binaries:
-    - [Releases](/wzykubek/licensmith/releases): Stable versions
-    - [Actions](/wzykubek/licensmith/actions): Development versions
+    - [Releases](https://github.com/wzykubek/licensmith/releases): Stable versions
+    - [Actions](https://github.com/wzykubek/licensmith/actions): Development versions
 
-2. Install from source: [see *Compilation*](#compilation)
+2. Install from source: see [compilation](#compilation) section
 
 ## Compilation
 ```bash

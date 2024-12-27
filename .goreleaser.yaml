@@ -43,7 +43,3 @@ changelog:
       - "^fix"
       - "^style"
       - "^refactor"
-
-gitea_urls:
-  api: https://git.brono.cloud/api/v1
-  download: https://git.brono.cloud

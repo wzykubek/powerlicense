@@ -1,9 +1,11 @@
 package main
 
 import (
+	"embed"
 	"errors"
 	"flag"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"strings"
@@ -16,6 +18,9 @@ type LicensingData struct {
 	AuthorEmail string
 	Year        int
 }
+
+//go:embed all:templates
+var Templates embed.FS
 
 var GitConfigError = errors.New("Can't read Git config")
 var NotSupportedError = errors.New("Not supported license")
@@ -36,11 +41,7 @@ func getGitUserData() (string, string, error) {
 }
 
 func getTemplateList() []string {
-	d, err := os.Open("templates")
-	if err != nil {
-		panic(err)
-	}
-	files, err := d.Readdir(0)
+	files, err := fs.ReadDir(Templates, "templates")
 	if err != nil {
 		panic(err)
 	}
@@ -60,7 +61,7 @@ func listTemplates() {
 
 func genLicense(lcnsName string, lcnsData LicensingData, outFileName string) error {
 	tmplFile := "templates/" + lcnsName + ".tmpl"
-	tmpl, err := template.ParseFiles(tmplFile)
+	tmpl, err := template.ParseFS(Templates, tmplFile)
 	if err != nil {
 		return NotSupportedError
 	}

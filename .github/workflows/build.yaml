@@ -1,0 +1,31 @@
+name: Build
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: stable
+
+    - name: Build
+      uses: goreleaser/goreleaser-action@v6
+      with:
+        distribution: goreleaser
+        version: "~> v2"
+        args: build --clean --snapshot
+
+    - name: Upload binares as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: licensmith
+        path: dist/

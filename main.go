@@ -2,7 +2,6 @@ package main
 
 import (
 	"embed"
-	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -33,17 +32,13 @@ type LicenseData struct {
 //go:embed all:templates
 var TemplatesDir embed.FS
 
-var GitConfigError = errors.New("Can't read Git config")
-var NotSupportedError = errors.New("Not supported license")
-var InvalidFrontMatter = errors.New("Template front matter is invalid")
-
 func getGitUserData() (string, string, error) {
 	var userData [2]string
 	for i, v := range []string{"user.name", "user.email"} {
 		cmd := exec.Command("git", "config", "--get", v)
 		out, err := cmd.Output()
 		if err != nil {
-			return "", "", GitConfigError
+			return "", "", fmt.Errorf("Can't read Git config: %w", err)
 		}
 
 		userData[i] = strings.TrimSpace(string(out))
@@ -74,19 +69,13 @@ func listLicenses() {
 func parseFrontMatter(tmplPath string) (LicenseData, string, error) {
 	data, err := TemplatesDir.ReadFile(tmplPath)
 	if err != nil {
-		panic(err)
+		return LicenseData{}, "", err
 	}
 
 	parts := strings.SplitN(string(data), "---", 3)
-	if len(parts) < 3 {
-		return LicenseData{}, "", InvalidFrontMatter
-	}
 
 	var licData LicenseData
-	err = yaml.Unmarshal([]byte(parts[1]), &licData)
-	if err != nil {
-		return LicenseData{}, "", InvalidFrontMatter
-	}
+	yaml.Unmarshal([]byte(parts[1]), &licData)
 
 	return licData, strings.TrimSpace(parts[2]), nil
 }
@@ -95,12 +84,12 @@ func genLicense(licName string, inputData InputData, outFileName string) error {
 	tmplPath := "templates/" + licName + ".tmpl"
 	_, lcnsBody, err := parseFrontMatter(tmplPath)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	tmpl, err := template.New(licName).Parse(lcnsBody)
 	if err != nil {
-		return NotSupportedError
+		return fmt.Errorf("Not supported license")
 	}
 
 	outFile, err := os.Create(outFileName)
@@ -142,12 +131,10 @@ func main() {
 		var err error
 		*AuthorName, *AuthorEmail, err = getGitUserData()
 		if err != nil {
-			if errors.Is(err, GitConfigError) {
-				fmt.Printf(
-					"Error: Can't read Git config.\n\nUse --name \"NAME\" and --email EMAIL instead.\n",
-				)
-				os.Exit(3)
-			}
+			fmt.Printf(
+				"Error: Can't read Git config.\n\nUse --name \"NAME\" and --email EMAIL instead.\n",
+			)
+			os.Exit(3)
 		}
 	}
 
@@ -159,10 +146,8 @@ func main() {
 
 	err := genLicense(*LicenseName, inputData, *OutputFile)
 	if err != nil {
-		if errors.Is(err, NotSupportedError) {
-			fmt.Printf("Error: There is no '%s' license\n\nAvailable licenses:\n", *LicenseName)
-			listLicenses()
-			os.Exit(2)
-		}
+		fmt.Printf("Error: There is no '%s' license\n\nAvailable licenses:\n", *LicenseName)
+		listLicenses()
+		os.Exit(2)
 	}
 }

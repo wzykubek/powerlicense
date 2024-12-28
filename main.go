@@ -15,7 +15,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type LicensingData struct {
+type InputData struct {
 	AuthorName  string
 	AuthorEmail string
 	Year        int
@@ -31,7 +31,7 @@ type LicenseData struct {
 }
 
 //go:embed all:templates
-var Templates embed.FS
+var TemplatesDir embed.FS
 
 var GitConfigError = errors.New("Can't read Git config")
 var NotSupportedError = errors.New("Not supported license")
@@ -53,7 +53,7 @@ func getGitUserData() (string, string, error) {
 }
 
 func getTemplateList() []string {
-	files, err := fs.ReadDir(Templates, "templates")
+	files, err := fs.ReadDir(TemplatesDir, "templates")
 	if err != nil {
 		panic(err)
 	}
@@ -66,13 +66,13 @@ func getTemplateList() []string {
 	return tmplList
 }
 
-func listTemplates() {
-	tmplList := getTemplateList()
-	fmt.Println(strings.Join(tmplList, ", "))
+func listLicenses() {
+	licList := getTemplateList()
+	fmt.Println(strings.Join(licList, ", "))
 }
 
 func parseFrontMatter(tmplPath string) (LicenseData, string, error) {
-	data, err := Templates.ReadFile(tmplPath)
+	data, err := TemplatesDir.ReadFile(tmplPath)
 	if err != nil {
 		panic(err)
 	}
@@ -82,23 +82,23 @@ func parseFrontMatter(tmplPath string) (LicenseData, string, error) {
 		return LicenseData{}, "", InvalidFrontMatter
 	}
 
-	var licenseData LicenseData
-	err = yaml.Unmarshal([]byte(parts[1]), &licenseData)
+	var licData LicenseData
+	err = yaml.Unmarshal([]byte(parts[1]), &licData)
 	if err != nil {
 		return LicenseData{}, "", InvalidFrontMatter
 	}
 
-	return licenseData, strings.TrimSpace(parts[2]), nil
+	return licData, strings.TrimSpace(parts[2]), nil
 }
 
-func genLicense(lcnsName string, lcnsData LicensingData, outFileName string) error {
-	tmplFile := "templates/" + lcnsName + ".tmpl"
-  _, lcnsBody, err := parseFrontMatter(tmplFile)
-  if err != nil {
-    panic(err)
-  }
+func genLicense(licName string, inputData InputData, outFileName string) error {
+	tmplPath := "templates/" + licName + ".tmpl"
+	_, lcnsBody, err := parseFrontMatter(tmplPath)
+	if err != nil {
+		panic(err)
+	}
 
-	tmpl, err := template.New(lcnsName).Parse(lcnsBody)
+	tmpl, err := template.New(licName).Parse(lcnsBody)
 	if err != nil {
 		return NotSupportedError
 	}
@@ -109,7 +109,7 @@ func genLicense(lcnsName string, lcnsData LicensingData, outFileName string) err
 	}
 	defer outFile.Close()
 
-	err = tmpl.Execute(outFile, lcnsData)
+	err = tmpl.Execute(outFile, inputData)
 	if err != nil {
 		return err
 	}
@@ -119,28 +119,28 @@ func genLicense(lcnsName string, lcnsData LicensingData, outFileName string) err
 
 func main() {
 	OutputFile := flag.String("output", "LICENSE", "Specify different output file")
-	License := flag.String("license", "", "Choose a license")
-	authorName := flag.String("name", "", "Set the author name")
-	authorEmail := flag.String("email", "", "Set the author email")
-	ListTemplates := flag.Bool("list", false, "List available licenses")
+	LicenseName := flag.String("license", "", "Choose a license")
+	AuthorName := flag.String("name", "", "Set the author name")
+	AuthorEmail := flag.String("email", "", "Set the author email")
+	ListLicenses := flag.Bool("list", false, "List available licenses")
 	flag.Parse()
 
-	*License = strings.ToUpper(*License)
+	*LicenseName = strings.ToUpper(*LicenseName)
 
-	if *ListTemplates {
-		listTemplates()
+	if *ListLicenses {
+		listLicenses()
 		os.Exit(0)
 	}
 
-	if *License == "" {
+	if *LicenseName == "" {
 		fmt.Printf("Error: No license specified\n\nUse --license LICENSE\n\nAvailable licenses:\n")
-		listTemplates()
+		listLicenses()
 		os.Exit(1)
 	}
 
-	if *authorName == "" || *authorEmail == "" {
+	if *AuthorName == "" || *AuthorEmail == "" {
 		var err error
-		*authorName, *authorEmail, err = getGitUserData()
+		*AuthorName, *AuthorEmail, err = getGitUserData()
 		if err != nil {
 			if errors.Is(err, GitConfigError) {
 				fmt.Printf(
@@ -151,17 +151,17 @@ func main() {
 		}
 	}
 
-	lcnsData := LicensingData{
-		AuthorName:  *authorName,
-		AuthorEmail: *authorEmail,
+	inputData := InputData{
+		AuthorName:  *AuthorName,
+		AuthorEmail: *AuthorEmail,
 		Year:        time.Now().Year(),
 	}
 
-	err := genLicense(*License, lcnsData, *OutputFile)
+	err := genLicense(*LicenseName, inputData, *OutputFile)
 	if err != nil {
 		if errors.Is(err, NotSupportedError) {
-			fmt.Printf("Error: There is no '%s' license\n\nAvailable licenses:\n", *License)
-			listTemplates()
+			fmt.Printf("Error: There is no '%s' license\n\nAvailable licenses:\n", *LicenseName)
+			listLicenses()
 			os.Exit(2)
 		}
 	}

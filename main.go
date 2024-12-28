@@ -88,6 +88,8 @@ func main() {
 	ListTemplates := flag.Bool("list", false, "List available licenses")
 	flag.Parse()
 
+  *License = strings.ToUpper(*License)
+
 	if *ListTemplates {
 		listTemplates()
 		os.Exit(0)

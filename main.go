@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"embed"
+	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -14,40 +16,110 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type InputData struct {
-	AuthorName  string
-	AuthorEmail string
-	Year        int
-}
+//go:embed all:templates
+var TemplatesDir embed.FS
 
-type LicenseData struct {
-	FullName    string   `yaml:"title"`
+type LicenseTemplate struct {
+	Title       string   `yaml:"title"`
 	ID          string   `yaml:"spdx-id"`
 	Description string   `yaml:"description"` // TODO
 	Permissions []string `yaml:"permissions"` // TODO
 	Limitations []string `yaml:"limitations"` // TODO
 	Conditions  []string `yaml:"conditions"`  // TODO
+	Body        string
 }
 
-//go:embed all:templates
-var TemplatesDir embed.FS
+type LicenseContext struct {
+	AuthorName  string
+	AuthorEmail string
+	Year        int
+}
 
-func getGitUserData() (string, string, error) {
-	var userData [2]string
-	for i, v := range []string{"user.name", "user.email"} {
-		cmd := exec.Command("git", "config", "--get", v)
-		out, err := cmd.Output()
-		if err != nil {
-			return "", "", fmt.Errorf("Can't read Git config: %w", err)
-		}
+type Licenser struct {
+	LicenseID      string
+	LicenseContext LicenseContext
+	OutputFile     string
+	licenseBody    string
+}
 
-		userData[i] = strings.TrimSpace(string(out))
+func NewLicenseContext(authorName string, authorEmail string) (LicenseContext, error) {
+	var err error
+	if authorName == "" {
+		authorName, err = gitUserData("user.name")
+	}
+	if authorEmail == "" {
+		authorEmail, err = gitUserData("user.email")
+	}
+	if err != nil {
+		return LicenseContext{}, err
 	}
 
-	return userData[0], userData[1], nil
+	return LicenseContext{
+		AuthorName:  authorName,
+		AuthorEmail: authorEmail,
+		Year:        time.Now().Year(),
+	}, nil
 }
 
-func getTemplateList() []string {
+func (l *Licenser) ParseTemplate() (LicenseTemplate, error) {
+	licenseID := strings.ToUpper(l.LicenseID)
+	tmplPath := "templates/" + licenseID + ".tmpl"
+	data, err := TemplatesDir.ReadFile(tmplPath)
+	if err != nil {
+		return LicenseTemplate{}, err
+	}
+
+	parts := strings.SplitN(string(data), "---", 3)
+
+	var licenseTmpl LicenseTemplate
+	yaml.Unmarshal([]byte(parts[1]), &licenseTmpl)
+	licenseTmpl.Body = strings.TrimSpace(parts[2])
+
+	return licenseTmpl, nil
+}
+
+func (l *Licenser) Generate() error {
+	license, err := l.ParseTemplate()
+	if err != nil {
+		return errors.New("Not supported license")
+	}
+
+	tmpl, _ := template.New(l.LicenseID).Parse(license.Body)
+
+	var output bytes.Buffer
+	tmpl.Execute(&output, l.LicenseContext)
+
+	l.licenseBody = output.String()
+
+	return nil
+}
+
+func (l *Licenser) WriteFile() error {
+	outFile, err := os.Create(l.OutputFile)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	if _, err := outFile.WriteString(l.licenseBody); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func gitUserData(key string) (string, error) {
+	cmd := exec.Command("git", "config", "--get", key)
+	out, err := cmd.Output()
+	if err != nil {
+		return "", errors.New("Can't read Git config")
+	}
+
+	value := strings.TrimSpace(string(out))
+	return value, nil
+}
+
+func templateList() []string {
 	files, err := fs.ReadDir(TemplatesDir, "templates")
 	if err != nil {
 		panic(err)
@@ -62,92 +134,51 @@ func getTemplateList() []string {
 }
 
 func listLicenses() {
-	licList := getTemplateList()
-	fmt.Println(strings.Join(licList, ", "))
-}
-
-func parseFrontMatter(tmplPath string) (LicenseData, string, error) {
-	data, err := TemplatesDir.ReadFile(tmplPath)
-	if err != nil {
-		return LicenseData{}, "", err
-	}
-
-	parts := strings.SplitN(string(data), "---", 3)
-
-	var licData LicenseData
-	yaml.Unmarshal([]byte(parts[1]), &licData)
-
-	return licData, strings.TrimSpace(parts[2]), nil
-}
-
-func genLicense(licName string, inputData InputData, outFileName string) error {
-	tmplPath := "templates/" + licName + ".tmpl"
-	_, lcnsBody, err := parseFrontMatter(tmplPath)
-	if err != nil {
-		return err
-	}
-
-	tmpl, err := template.New(licName).Parse(lcnsBody)
-	if err != nil {
-		return fmt.Errorf("Not supported license")
-	}
-
-	outFile, err := os.Create(outFileName)
-	if err != nil {
-		return err
-	}
-	defer outFile.Close()
-
-	err = tmpl.Execute(outFile, inputData)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	tmplList := templateList()
+	fmt.Println(strings.Join(tmplList, ", "))
 }
 
 func main() {
 	OutputFile := flag.String("output", "LICENSE", "Specify different output file")
-	LicenseName := flag.String("license", "", "Specify license by SPDX ID (e.g. BSD-3-Clause)")
+	LicenseID := flag.String("license", "", "Specify license by SPDX ID (e.g. BSD-3-Clause)")
 	AuthorName := flag.String("name", "", "Set the author name (read from Git by default)")
 	AuthorEmail := flag.String("email", "", "Set the author email (read from Git by default)")
 	ListLicenses := flag.Bool("list", false, "List available licenses")
 	flag.Parse()
-
-	*LicenseName = strings.ToUpper(*LicenseName)
 
 	if *ListLicenses {
 		listLicenses()
 		os.Exit(0)
 	}
 
-	if *LicenseName == "" {
+	if *LicenseID == "" {
 		fmt.Printf("Error: No license specified\n\nUse --license LICENSE\n\nAvailable licenses:\n")
 		listLicenses()
 		os.Exit(1)
 	}
 
-	if *AuthorName == "" || *AuthorEmail == "" {
-		var err error
-		*AuthorName, *AuthorEmail, err = getGitUserData()
-		if err != nil {
-			fmt.Printf(
-				"Error: Can't read Git config.\n\nUse --name \"NAME\" and --email EMAIL instead.\n",
-			)
-			os.Exit(3)
-		}
+	licenseCtx, err := NewLicenseContext(*AuthorName, *AuthorEmail)
+	if err != nil && err.Error() == "Can't read Git config" {
+		fmt.Printf(
+			"Error: Can't read Git config.\n\nUse --name \"NAME\" and --email EMAIL instead.\n",
+		)
+		os.Exit(3)
 	}
 
-	inputData := InputData{
-		AuthorName:  *AuthorName,
-		AuthorEmail: *AuthorEmail,
-		Year:        time.Now().Year(),
+	licenser := Licenser{
+		LicenseID:      *LicenseID,
+		LicenseContext: licenseCtx,
+		OutputFile:     *OutputFile,
 	}
 
-	err := genLicense(*LicenseName, inputData, *OutputFile)
-	if err != nil {
-		fmt.Printf("Error: There is no '%s' license\n\nAvailable licenses:\n", *LicenseName)
+	err = licenser.Generate()
+	if err != nil && err.Error() == "Not supported license" {
+		fmt.Printf("Error: There is no '%s' license\n\nAvailable licenses:\n", *LicenseID)
 		listLicenses()
 		os.Exit(2)
+	}
+
+	if err = licenser.WriteFile(); err != nil {
+		panic(err)
 	}
 }

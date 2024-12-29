@@ -108,7 +108,7 @@ func genLicense(licName string, inputData InputData, outFileName string) error {
 
 func main() {
 	OutputFile := flag.String("output", "LICENSE", "Specify different output file")
-	LicenseName := flag.String("license", "", "Choose a license")
+	LicenseName := flag.String("license", "", "Specify license by SPDX ID (e.g. BSD-3-Clause)")
 	AuthorName := flag.String("name", "", "Set the author name (read from Git by default)")
 	AuthorEmail := flag.String("email", "", "Set the author email (read from Git by default)")
 	ListLicenses := flag.Bool("list", false, "List available licenses")

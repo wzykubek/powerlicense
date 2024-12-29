@@ -37,7 +37,7 @@ func (l *Licenser) ParseTemplate() (LicenseTemplate, error) {
 func (l *Licenser) Generate() error {
 	license, err := l.ParseTemplate()
 	if err != nil {
-		return errors.New("Not supported license")
+		return errors.New("usupported license")
 	}
 
 	tmpl, _ := template.New(l.LicenseID).Parse(license.Body)

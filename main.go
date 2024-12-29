@@ -26,7 +26,7 @@ func main() {
 	}
 
 	licenseCtx, err := NewLicenseContext(*AuthorName, *AuthorEmail)
-	if err != nil && err.Error() == "Can't read Git config" {
+	if err != nil && err.Error() == "can't read Git config" {
 		fmt.Printf(
 			"Error: Can't read Git config.\n\nUse --name \"NAME\" and --email EMAIL instead.\n",
 		)
@@ -40,7 +40,7 @@ func main() {
 	}
 
 	err = licenser.Generate()
-	if err != nil && err.Error() == "Not supported license" {
+	if err != nil && err.Error() == "usupported license" {
 		fmt.Printf("Error: There is no '%s' license\n\nAvailable licenses:\n", *LicenseID)
 		listLicenses()
 		os.Exit(2)

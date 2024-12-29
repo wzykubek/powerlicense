@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"embed"
@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-//go:embed all:templates
-var TemplatesDir embed.FS
+//go:embed templates/*
+var EmbedFS embed.FS
 
 type LicenseTemplate struct {
 	Title       string   `yaml:"title"`
@@ -19,8 +19,8 @@ type LicenseTemplate struct {
 	Body        string
 }
 
-func listTemplates() []string {
-	files, err := fs.ReadDir(TemplatesDir, "templates")
+func ListTemplates() []string {
+	files, err := fs.ReadDir(EmbedFS, "templates")
 	if err != nil {
 		panic(err)
 	}
@@ -31,9 +31,4 @@ func listTemplates() []string {
 	}
 
 	return tmplList
-}
-
-func listLicenses() {
-	tmplList := listTemplates()
-	println(strings.Join(tmplList, ", "))
 }

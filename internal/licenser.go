@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"bytes"
@@ -19,7 +19,7 @@ type Licenser struct {
 
 func (l *Licenser) ParseTemplate() (LicenseTemplate, error) {
 	tmplPath := "templates/" + l.LicenseID + ".tmpl"
-	data, err := TemplatesDir.ReadFile(tmplPath)
+	data, err := EmbedFS.ReadFile(tmplPath)
 	if err != nil {
 		return LicenseTemplate{}, err
 	}

@@ -22,7 +22,10 @@ func (l *License) Gen() error {
 		return errors.New("usupported license")
 	}
 
-	body, _ := template.New(l.ID).Parse(tmpl.Body)
+	body, err := template.New(l.ID).Parse(tmpl.Body)
+  if err != nil {
+    return err
+  }
 
 	var output bytes.Buffer
 	body.Execute(&output, l.Context)

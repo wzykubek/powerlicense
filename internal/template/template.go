@@ -36,10 +36,10 @@ func Parse(path string) (Template, error) {
 	return tmpl, nil
 }
 
-func List() []string {
+func List() ([]string, error) {
 	files, err := fs.ReadDir(FS, ".")
 	if err != nil {
-		panic(err)
+		return []string{}, err
 	}
 
 	var templates []string
@@ -47,5 +47,5 @@ func List() []string {
 		templates = append(templates, strings.Replace(v.Name(), ".tmpl", "", 1))
 	}
 
-	return templates
+	return templates, nil
 }

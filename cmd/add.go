@@ -21,7 +21,7 @@ func init() {
 }
 
 var addCmd = &cobra.Command{
-	Use:   "add [license]",
+	Use:   "add [license id]",
 	Short: "Add LICENSE based on SPDX ID",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -39,13 +39,18 @@ var addCmd = &cobra.Command{
 		}
 
 		err = license.Gen()
-		if err != nil && err.Error() == "usupported license" {
-			fmt.Printf("Error: There is no '%s' license\n", licenseID)
-			os.Exit(2)
+		if err != nil {
+			if err.Error() == "usupported license" {
+				fmt.Printf("Error: There is no '%s' license\n", licenseID)
+				os.Exit(2)
+			} else {
+        fmt.Println("Internal Error:", err)
+        os.Exit(127)
+      }
 		}
 
 		if err = license.Write(OutputFile); err != nil {
-			panic(err)
+      fmt.Println("Error: Can't write file:", err)
 		}
 	},
 }

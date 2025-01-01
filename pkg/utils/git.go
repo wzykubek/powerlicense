@@ -1,4 +1,4 @@
-package internal
+package utils
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func gitUserData(key string) (string, error) {
+func GitUserData(key string) (string, error) {
 	cmd := exec.Command("git", "config", "--get", key)
 	out, err := cmd.Output()
 	if err != nil {

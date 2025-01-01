@@ -2,22 +2,22 @@ package cmd
 
 import (
 	"fmt"
-  "strings"
+	"strings"
 
-  "go.wzykubek.xyz/licensmith/internal"
+	t "go.wzykubek.xyz/licensmith/internal/template"
 
 	"github.com/spf13/cobra"
 )
 
 func init() {
-  rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(listCmd)
 }
 
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List available licenses",
 	Run: func(cmd *cobra.Command, args []string) {
-    tmplList := internal.ListTemplates()
-    fmt.Println(strings.Join(tmplList, ", "))
+		templates := t.List()
+		fmt.Println(strings.Join(templates, ", "))
 	},
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"go.wzykubek.xyz/licensmith/internal"
+	l "go.wzykubek.xyz/licensmith/internal/license"
 
 	"github.com/spf13/cobra"
 )
@@ -27,25 +27,24 @@ var addCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		licenseID := args[0]
 
-		licenseCtx, err := internal.NewLicenseContext(AuthorName, AuthorEmail)
+		ctx, err := l.NewContext(AuthorName, AuthorEmail)
 		if err != nil && err.Error() == "can't read Git config" {
 			fmt.Println("Error: Can't read Git config")
 			os.Exit(3)
 		}
 
-		licenser := internal.Licenser{
-			LicenseID:      licenseID,
-			LicenseContext: licenseCtx,
-			OutputFile:     OutputFile,
+		license := l.License{
+			ID:      licenseID,
+			Context: ctx,
 		}
 
-		err = licenser.Generate()
+		err = license.Gen()
 		if err != nil && err.Error() == "usupported license" {
 			fmt.Printf("Error: There is no '%s' license\n", licenseID)
 			os.Exit(2)
 		}
 
-		if err = licenser.WriteFile(); err != nil {
+		if err = license.Write(OutputFile); err != nil {
 			panic(err)
 		}
 	},

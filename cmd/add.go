@@ -9,15 +9,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var AuthorName string
-var AuthorEmail string
-var OutputFile string
+var authorName string
+var authorEmail string
+var outputFile string
 
 func init() {
 	rootCmd.AddCommand(addCmd)
-	addCmd.Flags().StringVar(&AuthorName, "name", "", "Author name (read from Git by default)")
-	addCmd.Flags().StringVar(&AuthorEmail, "email", "", "Author email (read from Git by default)")
-	addCmd.Flags().StringVarP(&OutputFile, "output", "o", "LICENSE", "Output file")
+	addCmd.Flags().StringVar(&authorName, "name", "", "Author name (read from Git by default)")
+	addCmd.Flags().StringVar(&authorEmail, "email", "", "Author email (read from Git by default)")
+	addCmd.Flags().StringVarP(&outputFile, "output", "o", "LICENSE", "Output file")
 }
 
 var addCmd = &cobra.Command{
@@ -27,7 +27,7 @@ var addCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		licenseID := args[0]
 
-		ctx, err := l.NewContext(AuthorName, AuthorEmail)
+		ctx, err := l.NewContext(authorName, authorEmail)
 		if err != nil && err.Error() == "can't read Git config" {
 			fmt.Println("Error: Can't read Git config")
 			os.Exit(3)
@@ -49,7 +49,7 @@ var addCmd = &cobra.Command{
       }
 		}
 
-		if err = license.Write(OutputFile); err != nil {
+		if err = license.Write(outputFile); err != nil {
       fmt.Println("Error: Can't write file:", err)
 		}
 	},

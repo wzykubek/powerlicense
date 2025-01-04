@@ -1,39 +1,53 @@
 # Licensmith
 
-Effortlessly craft the perfect LICENSE for your Git repo in seconds with a single command!
+Crafting the ideal license for your Git repository in seconds!
 
-## Usage
-This command will generate ISC `LICENSE` file in your current directory, including current year, and your name read from Git configuration:
+## Getting Started
+
+Licensmith, a streamlined tool, allows you to create an `LICENSE` file for your Git repository with ease, using just one command. This tool is designed to save you time and effort.
+
+### Usage
+
+To generate an ISC `LICENSE` file with the current year and your name, run the following command:
+
 ```bash
 licensmith add ISC
 ```
 
-By default, Licensmith read your local repository looking for user details (name and e-mail), as a fallback it uses global configuration.
+By default, Licensmith searches for user details in your local repository (name and email) as a fallback option. It uses global configuration if no local information is found.
 
-You can also specify different values using:
+You can customize this process by providing specific values using the following command:
+
 ```bash
 licensmith add ISC --name "John Doe" --email "jdoe@example.com"
 ```
 
-To list available templates:
+To view available templates, run the following command:
+
 ```bash
 licensmith list
 ```
 
-To show license summary:
+To display a license summary, use:
+
 ```bash
 licensmith show ISC
 ```
 
-## Installation
-There are different ways to get Licensmith:
-1. Use prebuilt binaries:
-    - [Releases](https://github.com/wzykubek/licensmith/releases): Stable versions
-    - [Actions](https://github.com/wzykubek/licensmith/actions): Development versions
+### Installation
 
-2. Install from source: see [compilation](#compilation) section
+Licensmith can be installed using various methods:
 
-## Compilation
+1. **Prebuilt Binaries:**
+    - For stable versions, visit the [Releases](https://github.com/wzykubek/licensmith/releases) page.
+    - To access development versions, check out the [Actions](https://github.com/wzykubek/licensmith/actions).
+
+2. **Installation from Source:** Refer to the [compilation section](#compilation) for step-by-step instructions.
+
+### Compilation
+
+To build Licensmith from source, follow these steps:
+
 ```bash
 git clone https://github.com/wzykubek/licensmith
 cd licensmith

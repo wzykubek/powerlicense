@@ -9,8 +9,8 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "licensmith",
-	Short: "Licensmith is a LICENSE generator",
-	Long:  "Effortlessly craft the perfect LICENSE for your Git repo in seconds with a single command!",
+	Short: "Crafting the ideal license for your Git repository in seconds!",
+	Long:  "Licensmith, a streamlined tool, allows you to create an LICENSE file for your Git repository with ease, using just one command. This tool is designed to save you time and effort.",
 }
 
 func Execute() {

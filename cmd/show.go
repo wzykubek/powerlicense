@@ -12,8 +12,19 @@ import (
 	"golang.org/x/text/language"
 )
 
+var printTitle bool
+var printDescription bool
+var printPermissions bool
+var printConditions bool
+var printLimitations bool
+
 func init() {
 	rootCmd.AddCommand(showCmd)
+	showCmd.Flags().BoolVar(&printTitle, "title", false, "Print title")
+	showCmd.Flags().BoolVar(&printDescription, "description", false, "Print description")
+	showCmd.Flags().BoolVar(&printPermissions, "permissions", false, "Print permissions")
+	showCmd.Flags().BoolVar(&printConditions, "conditions", false, "Print conditions")
+	showCmd.Flags().BoolVar(&printLimitations, "limitations", false, "Print limitations")
 }
 
 func parseValueList(arr []string) string {
@@ -37,6 +48,18 @@ var showCmd = &cobra.Command{
 	Short: "Show license details",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		// If none of the flags is passed then print all attributes
+		anyFlagChanged := false
+		for _, flag := range []string{"title", "description", "permissions", "conditions", "limitations"} {
+			if cmd.Flags().Changed(flag) {
+				anyFlagChanged = true
+				break
+			}
+		}
+		if !anyFlagChanged {
+			printTitle, printDescription, printPermissions, printConditions, printLimitations = true, true, true, true, true
+		}
+
 		licenseID := args[0]
 		tmpl, err := t.Parse(licenseID + ".tmpl")
 		if err != nil {
@@ -44,17 +67,28 @@ var showCmd = &cobra.Command{
 			os.Exit(2)
 		}
 
-		permissions := parseValueList(tmpl.Permissions)
-		conditions := parseValueList(tmpl.Conditions)
-		limitations := parseValueList(tmpl.Limitations)
-		fmt.Printf(
-      "%s (%s)\n\n%s\n\nPermissions:\n%s\n\nConditions:\n%s\n\nLimitations:\n%s\n",
-			tmpl.Title,
-			tmpl.ID,
-			tmpl.Description,
-			permissions,
-			conditions,
-      limitations,
-		)
+		printable := []string{}
+
+		if printTitle {
+			printable = append(printable, "Title: "+tmpl.Title)
+		}
+
+		if printDescription {
+			printable = append(printable, "Description:\n"+tmpl.Description)
+		}
+
+		if printPermissions {
+			printable = append(printable, "Permissions:\n"+parseValueList(tmpl.Permissions))
+		}
+
+		if printConditions {
+			printable = append(printable, "Conditions:\n"+parseValueList(tmpl.Conditions))
+		}
+
+		if printLimitations {
+			printable = append(printable, "Limitations:\n"+parseValueList(tmpl.Limitations))
+		}
+
+		fmt.Println(strings.Join(printable, "\n\n"))
 	},
 }

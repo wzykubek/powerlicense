@@ -15,9 +15,14 @@ You can also specify different values using:
 licensmith add ISC --name "John Doe" --email "jdoe@example.com"
 ```
 
-To list available templates run:
+To list available templates:
 ```bash
 licensmith list
+```
+
+To show license summary:
+```bash
+licensmith show ISC
 ```
 
 ## Installation
